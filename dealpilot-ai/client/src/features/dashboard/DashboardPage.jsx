@@ -180,6 +180,77 @@ export function DashboardPage() {
                               </div>
                             )}
                           </div>
+
+                          <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-gray-100">
+                            <Button 
+                              variant="secondary" 
+                              className="text-xs py-1 h-8"
+                              onClick={() => {
+                                // Simple mock alert for View Profile if we don't have a dedicated page
+                                alert(`Viewing profile for ${investor.name}\n\nOrganization: ${investor.organization || 'N/A'}\nThesis: ${investor.thesis || 'N/A'}\nTicket: ${investor.minTicketSize} - ${investor.maxTicketSize}`);
+                              }}
+                            >
+                              View Profile
+                            </Button>
+
+                            <Button 
+                              variant="secondary" 
+                              className="text-xs py-1 h-8"
+                              onClick={async (e) => {
+                                const btn = e.target;
+                                btn.disabled = true;
+                                btn.innerText = 'Saving...';
+                                try {
+                                  await apiClient.post('/saved-investors', { investorId: investor._id });
+                                  btn.innerText = 'Saved';
+                                } catch(err) {
+                                  btn.innerText = 'Save Error';
+                                }
+                              }}
+                            >
+                              Save Investor
+                            </Button>
+
+                            <Button 
+                              variant="secondary" 
+                              className="text-xs py-1 h-8 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                              onClick={async (e) => {
+                                const btn = e.target;
+                                btn.disabled = true;
+                                btn.innerText = 'Drafting...';
+                                try {
+                                  const res = await apiClient.post('/copilot/outreach-draft', {
+                                    startupId: match.startupId,
+                                    investorId: investor._id
+                                  });
+                                  const draft = res.data?.data?.body || 'Draft generated';
+                                  alert(`[DRAFT OUTREACH]\n\n${draft}\n\n(Draft saved to clipboard!)`);
+                                  navigator.clipboard.writeText(draft);
+                                  btn.innerText = 'Draft Copied';
+                                } catch(err) {
+                                  btn.innerText = 'Draft Error';
+                                }
+                              }}
+                            >
+                              Draft Outreach
+                            </Button>
+
+                            <Button 
+                              variant="secondary" 
+                              className="text-xs py-1 h-8 bg-green-50 text-green-700 hover:bg-green-100"
+                              onClick={() => {
+                                if (investor.websiteUrl) {
+                                  window.open(investor.websiteUrl, '_blank');
+                                } else if (investor.contactEmail) {
+                                  window.location.href = `mailto:${investor.contactEmail}`;
+                                } else {
+                                  alert('Contact details are unavailable for this investor. Please try drafting outreach and finding them on LinkedIn.');
+                                }
+                              }}
+                            >
+                              Contact
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}

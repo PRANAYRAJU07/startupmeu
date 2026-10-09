@@ -52,6 +52,7 @@ describe('Startup Routes', () => {
     industry: 'saas',
     stage: 'seed',
     targetRaiseAmount: 1500000,
+    headquartersCountry: 'United States',
     description: 'A great SaaS startup',
   };
 
@@ -61,6 +62,9 @@ describe('Startup Routes', () => {
       .set('Authorization', `Bearer ${tokenA}`)
       .send(validStartupPayload);
     
+    if (res.status !== 201) {
+      console.log(res.body);
+    }
     expect(res.status).toBe(201);
     expect(res.body.data.name).toBe('TechFlow');
     expect(res.body.data.userId).toBe(userA._id.toString());

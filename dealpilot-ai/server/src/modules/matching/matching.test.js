@@ -71,7 +71,7 @@ describe('Matching Service Unit Tests', () => {
     };
     
     const result = computeMatchScore(startup, investor);
-    expect(result.totalScore).toBe(0);
+    expect(result.hardExclusion).toBe(true);
   });
   
   it('handles unknown data without breaking', () => {
@@ -110,6 +110,8 @@ describe('Matching Routes Integration', () => {
       industry: 'saas',
       stage: 'seed',
       targetRaiseAmount: 1500000,
+      headquartersCountry: 'United States',
+      description: 'A great SaaS startup with enough characters',
     });
 
     investor1 = await Investor.create({

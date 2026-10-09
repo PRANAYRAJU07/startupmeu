@@ -2,9 +2,10 @@ import Match from './match.model.js';
 import Startup from '../startups/startup.model.js';
 import Investor from '../investors/investor.model.js';
 import AuditLog from '../auth/auditLog.model.js';
-import { NotFoundError } from '../../common/errors/index.js';
+import { NotFoundError, ConflictError, ValidationError } from '../../common/errors/index.js';
 import { ALGORITHM_VERSION } from '../../common/constants/index.js';
 import logger from '../../common/utils/logger.js';
+import { createStartupSchema } from '../startups/startup.validation.js';
 
 const WEIGHTS = {
   industry: 0.30,
@@ -127,6 +128,11 @@ export function computeMatchScore(startup, investor) {
   const tktMatch = calculateTicketSizeMatch(startup, investor);
   const geoMatch = calculateGeoMatch(startup, investor);
   const bizMatch = calculateBusinessModelMatch(startup, investor);
+
+  // Stage 1: Hard Exclusions
+  if (stgMatch.match === 'mismatch') return { hardExclusion: true, reason: stgMatch.explanation };
+  if (geoMatch.match === 'mismatch') return { hardExclusion: true, reason: geoMatch.explanation };
+  if (indMatch.match === 'mismatch') return { hardExclusion: true, reason: indMatch.explanation };
   
   criteria.push({ criterion: 'industry', weight: WEIGHTS.industry, ...indMatch });
   criteria.push({ criterion: 'stage', weight: WEIGHTS.stage, ...stgMatch });
@@ -144,6 +150,7 @@ export function computeMatchScore(startup, investor) {
   });
   
   return {
+    hardExclusion: false,
     totalScore: Math.round(totalScore),
     breakdown: {
       industryScore: indMatch.score,
@@ -163,6 +170,12 @@ export async function computeMatchesForStartup(userId, ctx = {}) {
     throw new NotFoundError('Startup profile not found');
   }
 
+  // Validate the profile so we do not generate matches from a stale or invalid profile
+  const { error } = createStartupSchema.body.validate(startup, { allowUnknown: true });
+  if (error) {
+    throw new ValidationError('Your startup profile is incomplete or invalid. Please update and save it before matching.', error.details);
+  }
+
   const investors = await Investor.find({ isActive: true }).lean();
   
   if (investors.length === 0) {
@@ -174,9 +187,13 @@ export async function computeMatchesForStartup(userId, ctx = {}) {
   for (const investor of investors) {
     const scoreResult = computeMatchScore(startup, investor);
     
+    if (scoreResult.hardExclusion) {
+      continue;
+    }
+    
     // Only save positive matches (score > 20 for example) to save DB space, or save all?
     // Let's save all, but only with scores > 0 to avoid massive useless data.
-    if (scoreResult.totalScore >= 0) {
+    if (scoreResult.totalScore > 0) {
       matchOps.push({
         updateOne: {
           filter: { userId, investorId: investor._id },
@@ -197,6 +214,9 @@ export async function computeMatchesForStartup(userId, ctx = {}) {
       });
     }
   }
+
+  // First, delete old matches
+  await Match.deleteMany({ userId });
 
   if (matchOps.length > 0) {
     await Match.bulkWrite(matchOps);
