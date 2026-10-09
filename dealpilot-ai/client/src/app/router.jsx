@@ -1,6 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext.jsx';
 import { AppLayout } from '../components/layout/AppLayout.jsx';
+import { LoginPage } from '../features/auth/LoginPage.jsx';
+import { RegisterPage } from '../features/auth/RegisterPage.jsx';
+import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage.jsx';
+import { DashboardPage } from '../features/dashboard/DashboardPage.jsx';
+import { InvestorDirectoryPage } from '../features/investors/InvestorDirectoryPage.jsx';
+import { PipelinePage } from '../features/pipeline/PipelinePage.jsx';
 
 function ProtectedRoute() {
   const { user, isLoading } = useAuth();
@@ -22,10 +28,6 @@ function PublicOnlyRoute() {
   return !user ? <Outlet /> : <Navigate to="/dashboard" replace />;
 }
 
-import { LoginPage } from '../features/auth/LoginPage.jsx';
-import { RegisterPage } from '../features/auth/RegisterPage.jsx';
-import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage.jsx';
-
 function AppRouter() {
   return (
     <BrowserRouter>
@@ -36,10 +38,6 @@ function AppRouter() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Route>
-
-import { DashboardPage } from '../features/dashboard/DashboardPage.jsx';
-import { InvestorDirectoryPage } from '../features/investors/InvestorDirectoryPage.jsx';
-import { PipelinePage } from '../features/pipeline/PipelinePage.jsx';
 
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
