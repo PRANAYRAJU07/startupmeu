@@ -11,6 +11,7 @@ import { apiLimiter } from './common/middleware/rateLimiter.js';
 import { errorHandler } from './common/middleware/errorHandler.js';
 import { NotFoundError } from './common/errors/index.js';
 import healthRouter from './modules/health/health.routes.js';
+import authRouter from './modules/auth/auth.routes.js';
 
 const app = express();
 
@@ -44,9 +45,7 @@ app.use('/api/', apiLimiter);
 
 // Routes
 app.use('/health', healthRouter);
-
-// TODO: mount auth, startups, investors, matching, pipeline, activities, copilot, analytics routes
-app.use('/api/v1', (req, res, next) => next());
+app.use('/api/v1/auth', authRouter);
 
 // 404 handler
 app.use((req, _res, next) => {

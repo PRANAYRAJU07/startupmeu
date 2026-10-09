@@ -1,10 +1,14 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { MemoryStore } from 'express-rate-limit';
 import config from '../../config/index.js';
 import { RateLimitError } from '../errors/index.js';
+
+// Export the store so tests can reset it between runs
+export const authStore = new MemoryStore();
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
+  store: authStore,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req, _res, next) => {
