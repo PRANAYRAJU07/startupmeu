@@ -48,7 +48,8 @@ export function RegisterForm() {
       setSuccess('Registration successful! Please check your email to verify your account.');
       setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to register. Please try again.');
+      const errMsg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to register. Please try again.';
+      setError(errMsg);
     }
   };
 

@@ -31,7 +31,8 @@ export function LoginForm() {
       await login(data.email, data.password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+      const errMsg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to login. Please check your credentials.';
+      setError(errMsg);
     }
   };
 
