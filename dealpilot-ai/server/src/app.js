@@ -12,6 +12,13 @@ import { errorHandler } from './common/middleware/errorHandler.js';
 import { NotFoundError } from './common/errors/index.js';
 import healthRouter from './modules/health/health.routes.js';
 import authRouter from './modules/auth/auth.routes.js';
+import startupRouter from './modules/startups/startup.routes.js';
+import investorRouter from './modules/investors/investor.routes.js';
+import savedInvestorRouter from './modules/investors/savedInvestor.routes.js';
+import matchingRouter from './modules/matching/matching.routes.js';
+import copilotRouter from './modules/copilot/copilot.routes.js';
+import dealRouter from './modules/pipeline/deal.routes.js';
+import analyticsRouter from './modules/analytics/analytics.routes.js';
 
 const app = express();
 
@@ -46,6 +53,13 @@ app.use('/api/', apiLimiter);
 // Routes
 app.use('/health', healthRouter);
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/startups', startupRouter);
+app.use('/api/v1/investors', investorRouter);
+app.use('/api/v1/saved-investors', savedInvestorRouter);
+app.use('/api/v1/matches', matchingRouter);
+app.use('/api/v1/copilot', copilotRouter);
+app.use('/api/v1/deals', dealRouter);
+app.use('/api/v1/analytics', analyticsRouter);
 
 // 404 handler
 app.use((req, _res, next) => {

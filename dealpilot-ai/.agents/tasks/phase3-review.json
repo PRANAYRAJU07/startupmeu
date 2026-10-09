@@ -1,0 +1,48 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "id": 1,
+      "label": "verifyEmail tokenHash select gap",
+      "severity": "blocking",
+      "confidence": "confirmed",
+      "description": "Both verifyEmail and resetPassword use .where('tokenHash').equals() after .select('+tokenHash'). In Mongoose 7+, the select projection controls what is returned, not what is matched; the tokenHash condition may be silently ignored, causing findOne to return the first matching token of that type regardless of hash value. Fix: pass tokenHash directly into findOne({ tokenHash, type: 'email_verification' }).select('+tokenHash')."
+    },
+    {
+      "id": 2,
+      "label": "Expired session not revoked before throw",
+      "severity": "blocking",
+      "confidence": "confirmed",
+      "description": "In refreshTokens, when session.expiresAt <= now, the code throws without setting revokedAt. A second call with the same expired token hits the expiry branch again instead of the reuse-detection branch, bypassing the high-severity audit. Revoke the session (set revokedAt + revokeReason='expired', await session.save()) before throwing."
+    },
+    {
+      "id": 3,
+      "label": "authenticate cookie fallback contradicts spec",
+      "severity": "blocking",
+      "confidence": "confirmed",
+      "description": "authenticate.js falls back to req.cookies.accessToken when no Authorization header is present. The spec requires access tokens in the response body only, never in cookies. Remove this fallback."
+    },
+    {
+      "id": 4,
+      "label": "Missing standalone verifyEmail test",
+      "severity": "blocking",
+      "confidence": "confirmed",
+      "description": "auth.test.js has no test that retrieves the verification token from getSentEmails() and calls GET /api/v1/auth/verify-email?token=... The registerAndVerify helper bypasses the token flow by directly setting isEmailVerified=true in the DB, meaning bugs in verifyEmail would not be caught. Add a dedicated test for the token-based verification path."
+    },
+    {
+      "id": 5,
+      "label": "Missing logout session invalidation and changePassword tests",
+      "severity": "blocking",
+      "confidence": "confirmed",
+      "description": "The logout test confirms HTTP 200 but does not verify the session is revoked (a subsequent /refresh should return 401). There is no test for POST /api/v1/auth/change-password at all, including the session-revocation requirement. Both are required by the spec."
+    },
+    {
+      "id": 6,
+      "label": "forgotPassword silently blocks unverified accounts with no recovery path",
+      "severity": "non-blocking",
+      "confidence": "likely",
+      "description": "Users who registered but never verified their email are silently excluded from the password reset flow (isEmailVerified guard), and no resend-verification endpoint exists. Add a resend-verification endpoint or decouple the reset guard from email verification status."
+    }
+  ],
+  "reviewDoc": "c:\\Users\\prana\\OneDrive\\Desktop\\startupmeu\\startupmeu/dealpilot-ai/.agents/tasks/2026-10-09-113605-review.md"
+}

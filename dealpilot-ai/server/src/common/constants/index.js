@@ -24,7 +24,7 @@ export const PIPELINE_STAGES = Object.freeze([
 export const ACTIVITY_TYPES = Object.freeze([
   'startup_created', 'startup_updated', 'investor_saved', 'investor_unsaved',
   'deal_created', 'deal_stage_changed', 'follow_up_scheduled',
-  'pitch_analysis_created', 'pitch_draft_saved', 'account_updated', 'password_changed',
+  'pitch_analysis_created', 'pitch_draft_saved', 'account_updated', 'password_changed', 'contact', 'note_added'
 ]);
 
 export const ALGORITHM_VERSION = '1.0.0';
