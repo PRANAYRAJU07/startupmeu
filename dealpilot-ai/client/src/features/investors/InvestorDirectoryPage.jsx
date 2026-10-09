@@ -25,10 +25,16 @@ export function InvestorDirectoryPage() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: (investorId) => apiClient.post('/saved-investors', { investorId }),
+    mutationFn: (investorId) => apiClient.post('/deals', { investorId, stage: 'shortlisted' }),
     onSuccess: () => {
-      // You could invalidate saved-investors query here if we displayed it
-      alert('Investor saved!');
+      alert('Investor added to CRM!');
+    },
+    onError: (error) => {
+      if (error.response?.status === 409) {
+        alert('Investor is already in your CRM.');
+      } else {
+        alert('Failed to add to CRM.');
+      }
     }
   });
 
@@ -105,7 +111,7 @@ export function InvestorDirectoryPage() {
                       onClick={() => saveMutation.mutate(investor._id)}
                       isLoading={saveMutation.isPending}
                     >
-                      Save Investor
+                      Add to CRM
                     </Button>
                     <Button 
                       className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 border-0"

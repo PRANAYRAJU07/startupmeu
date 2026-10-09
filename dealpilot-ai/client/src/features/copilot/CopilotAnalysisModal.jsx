@@ -69,6 +69,11 @@ export function CopilotAnalysisModal({ investor, onClose }) {
                 rows={6}
                 className="w-full rounded-md border border-gray-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
+              {analyzeMutation.isError && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md border border-red-100">
+                  {analyzeMutation.error?.response?.data?.error?.message || analyzeMutation.error.message || 'An error occurred during analysis.'}
+                </div>
+              )}
               <Button 
                 onClick={handleAnalyze} 
                 className="w-full"
@@ -82,7 +87,7 @@ export function CopilotAnalysisModal({ investor, onClose }) {
               <div className="rounded-md bg-indigo-50 p-4 border border-indigo-100">
                 <h4 className="font-medium text-indigo-900 mb-2">Executive Summary</h4>
                 <p className="text-sm text-indigo-800">
-                  {analyzeMutation.data?.data?.data?.output?.executiveSummary}
+                  {analyzeMutation.data?.data?.output?.executiveSummary}
                 </p>
               </div>
 
@@ -92,7 +97,7 @@ export function CopilotAnalysisModal({ investor, onClose }) {
                     <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" /> Strengths
                   </h4>
                   <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
-                    {analyzeMutation.data?.data?.data?.output?.strengths?.map((s, i) => <li key={i}>{s}</li>)}
+                    {analyzeMutation.data?.data?.output?.strengths?.map((s, i) => <li key={i}>{s}</li>)}
                   </ul>
                 </div>
                 <div>
@@ -100,7 +105,7 @@ export function CopilotAnalysisModal({ investor, onClose }) {
                     <AlertCircle className="mr-2 h-4 w-4 text-amber-600" /> Weaknesses
                   </h4>
                   <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
-                    {analyzeMutation.data?.data?.data?.output?.weaknesses?.map((w, i) => <li key={i}>{w}</li>)}
+                    {analyzeMutation.data?.data?.output?.weaknesses?.map((w, i) => <li key={i}>{w}</li>)}
                   </ul>
                 </div>
               </div>
@@ -108,7 +113,7 @@ export function CopilotAnalysisModal({ investor, onClose }) {
               <div>
                 <h4 className="font-medium text-gray-900 mb-2">Recommendations</h4>
                 <ul className="list-decimal pl-5 text-sm text-gray-600 space-y-1">
-                  {analyzeMutation.data?.data?.data?.output?.prioritizedRecommendations?.map((r, i) => <li key={i}>{r}</li>)}
+                  {analyzeMutation.data?.data?.output?.prioritizedRecommendations?.map((r, i) => <li key={i}>{r}</li>)}
                 </ul>
               </div>
               
@@ -121,10 +126,16 @@ export function CopilotAnalysisModal({ investor, onClose }) {
                   Generate Outreach Draft
                 </Button>
 
+                {draftMutation.isError && (
+                  <div className="mt-4 p-3 text-sm text-red-600 bg-red-50 rounded-md border border-red-100">
+                    {draftMutation.error?.response?.data?.error?.message || draftMutation.error.message || 'An error occurred during draft generation.'}
+                  </div>
+                )}
+
                 {draftMutation.isSuccess && (
                   <div className="mt-4 p-4 border border-gray-200 rounded-md bg-gray-50 text-sm whitespace-pre-wrap">
-                    <p className="font-semibold border-b pb-2 mb-2">{draftMutation.data?.data?.data?.subject}</p>
-                    <p>{draftMutation.data?.data?.data?.body}</p>
+                    <p className="font-semibold border-b pb-2 mb-2">{draftMutation.data?.data?.subject}</p>
+                    <p>{draftMutation.data?.data?.body}</p>
                   </div>
                 )}
               </div>

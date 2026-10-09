@@ -199,16 +199,21 @@ export function DashboardPage() {
                               onClick={async (e) => {
                                 const btn = e.target;
                                 btn.disabled = true;
-                                btn.innerText = 'Saving...';
+                                btn.innerText = 'Adding...';
                                 try {
-                                  await apiClient.post('/saved-investors', { investorId: investor._id });
-                                  btn.innerText = 'Saved';
+                                  await apiClient.post('/deals', { investorId: investor._id, stage: 'shortlisted' });
+                                  btn.innerText = 'Added to CRM';
                                 } catch(err) {
-                                  btn.innerText = 'Save Error';
+                                  // Could be duplicate error (409)
+                                  if (err.response?.status === 409) {
+                                    btn.innerText = 'Already in CRM';
+                                  } else {
+                                    btn.innerText = 'Error';
+                                  }
                                 }
                               }}
                             >
-                              Save Investor
+                              Add to CRM
                             </Button>
 
                             <Button 

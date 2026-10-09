@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../lib/api-client';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Download, Target } from 'lucide-react';
+import { Download, Target, Edit3 } from 'lucide-react';
+import { EditDealModal } from './EditDealModal';
 
 const STAGES = [
   'shortlisted', 'contacted', 'meeting-scheduled', 'in-discussion',
@@ -12,6 +13,7 @@ const STAGES = [
 
 export function PipelinePage() {
   const queryClient = useQueryClient();
+  const [selectedDeal, setSelectedDeal] = useState(null);
 
   const { data: dealsData, isLoading } = useQuery({
     queryKey: ['deals'],
@@ -110,7 +112,6 @@ export function PipelinePage() {
                         </div>
                         
                         <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                           {/* Quick move buttons as simple replacement for drag/drop */}
                            <select 
                              className="text-xs border-0 bg-transparent text-gray-500 cursor-pointer focus:ring-0 p-0"
                              value={deal.stage}
@@ -121,6 +122,14 @@ export function PipelinePage() {
                                <option key={s} value={s}>{s.replace('-', ' ')}</option>
                              ))}
                            </select>
+
+                           <button 
+                             className="text-gray-400 hover:text-indigo-600 p-1 rounded transition-colors"
+                             onClick={() => setSelectedDeal(deal)}
+                             title="Edit Deal Details"
+                           >
+                             <Edit3 className="h-4 w-4" />
+                           </button>
                         </div>
                       </CardContent>
                     </Card>
@@ -137,6 +146,10 @@ export function PipelinePage() {
             );
           })}
         </div>
+      )}
+
+      {selectedDeal && (
+        <EditDealModal deal={selectedDeal} onClose={() => setSelectedDeal(null)} />
       )}
     </div>
   );
