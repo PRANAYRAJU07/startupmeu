@@ -84,6 +84,21 @@ export function DashboardPage() {
                   <p className="text-sm text-gray-600">
                     Find investors whose thesis aligns with your industry, stage, and geography.
                   </p>
+                  
+                  {computeMutation.isError && (
+                    <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+                      {computeMutation.error?.response?.data?.error?.message || 
+                       computeMutation.error?.response?.data?.message || 
+                       'Failed to compute matches.'}
+                    </div>
+                  )}
+
+                  {computeMutation.isSuccess && (
+                    <div className="p-3 text-sm text-green-700 bg-green-50 rounded-md">
+                      Matching complete!
+                    </div>
+                  )}
+
                   <Button 
                     className="w-full" 
                     onClick={() => computeMutation.mutate()}
@@ -108,19 +123,67 @@ export function DashboardPage() {
                 {isLoadingMatches ? (
                   <p className="text-sm text-gray-500">Loading matches...</p>
                 ) : matchesData && matchesData.length > 0 ? (
-                  <ul className="space-y-3">
-                    {matchesData.slice(0, 5).map(match => (
-                      <li key={match._id} className="flex justify-between items-center border-b border-gray-100 pb-2">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{match.investorId?.name}</p>
-                          <p className="text-xs text-gray-500">Score: {match.totalScore}/100</p>
+                  <div className="space-y-6">
+                    {matchesData.slice(0, 5).map(match => {
+                      const investor = match.investorId;
+                      return (
+                        <div key={match._id} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="font-semibold text-lg text-gray-900">{investor?.name}</h3>
+                              <p className="text-sm text-gray-600">{investor?.organization}</p>
+                            </div>
+                            <div className="text-right">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                match.totalScore >= 80 ? 'bg-green-100 text-green-800' : 
+                                match.totalScore >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                Score: {match.totalScore}/100
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2 text-xs mb-3 text-gray-600">
+                            <div><span className="font-medium text-gray-900">Stage:</span> {investor?.stages?.join(', ') || 'N/A'}</div>
+                            <div><span className="font-medium text-gray-900">Industry:</span> {investor?.industries?.join(', ') || 'N/A'}</div>
+                            <div><span className="font-medium text-gray-900">Geography:</span> {investor?.geographies?.join(', ') || 'N/A'}</div>
+                            <div>
+                              <span className="font-medium text-gray-900">Tickets:</span> 
+                              {investor?.minTicketSize ? `$${investor.minTicketSize.toLocaleString()}` : 'N/A'} - 
+                              {investor?.maxTicketSize ? `$${investor.maxTicketSize.toLocaleString()}` : 'N/A'}
+                            </div>
+                          </div>
+
+                          {investor?.thesis && (
+                            <p className="text-xs text-gray-700 italic mb-3 border-l-2 border-indigo-200 pl-2">
+                              "{investor.thesis}"
+                            </p>
+                          )}
+
+                          <div className="space-y-2 mt-4 pt-3 border-t border-gray-100">
+                            <h4 className="text-xs font-semibold text-gray-900">Match Breakdown:</h4>
+                            <ul className="text-xs space-y-1">
+                              {match.explanations?.map((exp, idx) => (
+                                <li key={idx} className="flex gap-2">
+                                  <span className="shrink-0">{exp.match === 'positive' ? '✅' : exp.match === 'partial' ? '⚠️' : exp.match === 'mismatch' ? '❌' : '❓'}</span>
+                                  <span className="text-gray-600">{exp.explanation}</span>
+                                </li>
+                              ))}
+                            </ul>
+                            
+                            {match.missingInfo && match.missingInfo.length > 0 && (
+                              <div className="mt-2 text-xs text-orange-600 bg-orange-50 p-2 rounded">
+                                <span className="font-semibold">Missing Info:</span>
+                                <ul className="list-disc pl-4 mt-1">
+                                  {match.missingInfo.map((info, idx) => <li key={idx}>{info}</li>)}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <Link to={`/investors`} className="text-xs font-medium text-indigo-600 hover:text-indigo-500">
-                          View
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <p className="text-sm text-gray-500">No matches found yet. Run the matching engine.</p>
                 )}

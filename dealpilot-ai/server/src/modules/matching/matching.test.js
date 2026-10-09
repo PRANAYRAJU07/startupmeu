@@ -56,7 +56,7 @@ describe('Matching Service Unit Tests', () => {
     const startup = {
       industry: 'healthtech',
       stage: 'series-b',
-      targetRaiseAmount: 10000000,
+      targetRaiseAmount: 20000000,
       headquartersCountry: 'Germany',
       businessModel: 'b2c',
     };

@@ -45,14 +45,24 @@ function convertToUSD(amount, currency) {
 }
 
 function calculateTicketSizeMatch(startup, investor) {
-  const startupMin = convertToUSD(startup.minTicketSize, startup.raiseCurrency);
-  const startupMax = convertToUSD(startup.maxTicketSize, startup.raiseCurrency);
+  let startupMin = convertToUSD(startup.minTicketSize, startup.raiseCurrency);
+  let startupMax = convertToUSD(startup.maxTicketSize, startup.raiseCurrency);
+  
+  if (startupMin == null && startupMax == null) {
+    const targetRaise = convertToUSD(startup.targetRaiseAmount, startup.raiseCurrency);
+    if (targetRaise) {
+      // If no explicit ticket range is provided, assume an investor could contribute 
+      // anywhere from 5% of the round up to 100% of the round.
+      startupMin = targetRaise * 0.05;
+      startupMax = targetRaise;
+    } else {
+      return { score: 0, match: 'unknown', explanation: 'Startup did not provide a target raise or acceptable ticket sizes.' };
+    }
+  }
+
   const invMin = convertToUSD(investor.minTicketSize, investor.currency || 'USD');
   const invMax = convertToUSD(investor.maxTicketSize, investor.currency || 'USD');
 
-  if (startupMin == null && startupMax == null) {
-    return { score: 0, match: 'unknown', explanation: 'Startup did not provide acceptable ticket sizes.' };
-  }
   if (invMin == null && invMax == null) {
     return { score: 0, match: 'unknown', explanation: 'Investor ticket size preferences are not known.' };
   }
@@ -154,6 +164,11 @@ export async function computeMatchesForStartup(userId, ctx = {}) {
   }
 
   const investors = await Investor.find({ isActive: true }).lean();
+  
+  if (investors.length === 0) {
+    throw new ConflictError('No investor data available to match against. Please seed or import investor records.');
+  }
+
   const matchOps = [];
 
   for (const investor of investors) {
@@ -212,7 +227,7 @@ export async function getMatches(userId, query) {
   const skip = (page - 1) * limit;
 
   const [data, total] = await Promise.all([
-    Match.find({ userId }).sort({ totalScore: -1 }).skip(skip).limit(limit).populate('investorId', 'name organization logo').lean(),
+    Match.find({ userId }).sort({ totalScore: -1 }).skip(skip).limit(limit).populate('investorId').lean(),
     Match.countDocuments({ userId })
   ]);
 
