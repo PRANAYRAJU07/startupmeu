@@ -1,4 +1,5 @@
 import Deal from './deal.model.js';
+import Investor from '../investors/investor.model.js';
 import Activity from '../activities/activity.model.js';
 import AuditLog from '../auth/auditLog.model.js';
 import { NotFoundError, ConflictError } from '../../common/errors/index.js';
@@ -15,38 +16,47 @@ export async function getDealById(userId, dealId) {
 }
 
 export async function createDeal(userId, dealData, ctx = {}) {
+  // Check that investor exists
+  const investor = await Investor.findById(dealData.investorId);
+  if (!investor) throw new NotFoundError('Referenced investor not found');
+
   const existing = await Deal.findOne({ userId, investorId: dealData.investorId });
   if (existing) {
     throw new ConflictError('Deal already exists for this investor');
   }
 
-  const deal = await Deal.create({
-    userId,
-    ...dealData,
-  });
-
   try {
-    await AuditLog.create({
+    const deal = await Deal.create({
       userId,
-      action: 'deal_created',
-      ipAddress: ctx.ipAddress,
-      userAgent: ctx.userAgent,
-      requestId: ctx.requestId,
-      metadata: { dealId: deal._id, stage: deal.stage },
-      severity: 'low',
+      ...dealData,
     });
-  } catch (err) {
-    logger.warn('AuditLog failed', err);
-  }
 
-  return deal;
+    try {
+      await AuditLog.create({
+        userId,
+        action: 'deal_created',
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        requestId: ctx.requestId,
+        metadata: { dealId: deal._id, stage: deal.stage },
+        severity: 'low',
+      });
+    } catch (err) {
+      logger.warn('AuditLog failed', err);
+    }
+
+    return deal;
+  } catch (err) {
+    if (err.code === 11000) throw new ConflictError('Deal already exists for this investor');
+    throw err;
+  }
 }
 
 export async function updateDeal(userId, dealId, updates, ctx = {}) {
   const deal = await Deal.findOneAndUpdate(
     { _id: dealId, userId },
     { $set: updates },
-    { new: true }
+    { new: true, runValidators: true }
   );
 
   if (!deal) throw new NotFoundError('Deal not found');

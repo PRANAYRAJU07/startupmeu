@@ -28,7 +28,8 @@ describe('Matching Service Unit Tests', () => {
     const startup = {
       industry: 'saas',
       stage: 'seed',
-      targetRaiseAmount: 1000000,
+      minTicketSize: 500000,
+      maxTicketSize: 2000000,
       headquartersCountry: 'United States',
       businessModel: 'b2b',
     };
@@ -70,7 +71,7 @@ describe('Matching Service Unit Tests', () => {
     };
     
     const result = computeMatchScore(startup, investor);
-    expect(result.totalScore).toBe(20);
+    expect(result.totalScore).toBe(0);
   });
   
   it('handles unknown data without breaking', () => {

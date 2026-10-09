@@ -113,7 +113,7 @@ describe('Pipeline and Analytics Routes', () => {
     expect(res.body.data.funnel['contacted'].count).toBe(1);
     expect(res.body.data.funnel['meeting-scheduled'].count).toBe(1);
     expect(res.body.data.funnel['meeting-scheduled'].value).toBe(100000);
-    expect(res.body.data.conversionRates.contactedToMeeting).toBe(100);
+    expect(res.body.data.stageCountRatios.contactedToMeetingRatio).toBe(100);
   });
   
   it('GET /api/v1/analytics/export > exports CSV', async () => {

@@ -60,13 +60,88 @@ class MockAIProvider {
 }
 
 class RealAIProvider {
+  async fetchOpenAI(messages, systemPrompt) {
+    if (!config.aiApiKey) {
+      throw new Error('Real AI provider requires AI_API_KEY configuration');
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.aiApiKey}`
+        },
+        body: JSON.stringify({
+          model: config.aiModel || 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ],
+          response_format: { type: 'json_object' }
+        }),
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return JSON.parse(data.choices[0].message.content);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   async analyzePitch(startupText, pitchText, goals) {
-    throw new Error('Real AI provider not implemented yet (requires API credentials). Configure AI_PROVIDER=mock in .env');
+    const systemPrompt = `You are an expert VC associate analyzing a startup pitch. Respond ONLY with valid JSON following this exact structure:
+{
+  "executiveSummary": "string",
+  "strengths": ["string"],
+  "weaknesses": ["string"],
+  "missingInformation": ["string"],
+  "marketPositioning": { "feedback": "string", "severity": "low|medium|high" },
+  "businessModelFeedback": { "feedback": "string", "severity": "low|medium|high" },
+  "tractionAssessment": "string",
+  "readinessChecklist": [ { "item": "string", "status": "ready|needs_work|missing" } ],
+  "prioritizedRecommendations": ["string"],
+  "followUpQuestions": ["string"],
+  "caveats": "string"
+}`;
+
+    const prompt = `Startup Facts: ${startupText}\n\nPitch: ${pitchText}\n\nGoals: ${goals}\n\nProvide the analysis JSON.`;
+    
+    try {
+      const result = await this.fetchOpenAI([{ role: 'user', content: prompt }], systemPrompt);
+      validateAnalysisSchema(result);
+      return result;
+    } catch (err) {
+      // Don't leak raw credentials or sensitive errors, but throw something the app can catch
+      if (err.name === 'AbortError') {
+         throw new Error('AI provider timed out.');
+      }
+      throw new Error('AI analysis failed. Please verify credentials, formatting, or try mock mode.');
+    }
   }
   
   async generateOutreachDraft(startupFacts, investorThesis, matchExplanation) {
-    throw new Error('Real AI provider not implemented yet (requires API credentials). Configure AI_PROVIDER=mock in .env');
+    const systemPrompt = `You are helping a founder draft a cold outreach email to an investor. Respond ONLY in valid JSON matching this schema: { "subject": "string", "body": "string" }`;
+    const prompt = `Startup: ${startupFacts}\n\nInvestor Thesis: ${investorThesis}\n\nMatch Context: ${matchExplanation}\n\nDraft a concise, professional email.`;
+    
+    try {
+      const result = await this.fetchOpenAI([{ role: 'user', content: prompt }], systemPrompt);
+      if (!result.subject || !result.body) throw new Error('Invalid schema from AI');
+      return result;
+    } catch (err) {
+      throw new Error('AI draft generation failed. Please check credentials or try mock mode.');
+    }
   }
 }
 
-export const aiProvider = config.aiProvider === 'mock' ? new MockAIProvider() : new RealAIProvider();
+export const aiProvider = (config.aiProvider === 'real' || config.aiProvider === 'openai') 
+  ? new RealAIProvider() 
+  : new MockAIProvider();

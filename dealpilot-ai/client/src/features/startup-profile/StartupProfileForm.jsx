@@ -35,6 +35,9 @@ export function StartupProfileForm() {
 
   const mutation = useMutation({
     mutationFn: (data) => {
+      if (startup) {
+        return apiClient.put('/startups/me', data);
+      }
       return apiClient.post('/startups/me', data);
     },
     onSuccess: () => {

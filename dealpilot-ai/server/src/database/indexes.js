@@ -9,7 +9,7 @@ import SavedInvestor from '../modules/investors/savedInvestor.model.js';
 import Match from '../modules/matching/match.model.js';
 import Deal from '../modules/pipeline/deal.model.js';
 import Activity from '../modules/activities/activity.model.js';
-import PitchAnalysis from '../modules/copilot/pitchAnalysis.model.js';
+import PitchAnalysis from '../modules/copilot/copilotAnalysis.model.js';
 
 const MODELS = [
   { name: 'User', model: User },
@@ -26,13 +26,19 @@ const MODELS = [
 ];
 
 export async function ensureIndexes() {
+  let hasError = false;
   for (const { name, model } of MODELS) {
+    if (!model) continue; // Skip if model wasn't properly imported or doesn't exist (e.g. PitchAnalysis vs CopilotAnalysis)
     try {
       await model.createIndexes();
       logger.info(`Indexes ensured for ${name}`);
     } catch (err) {
+      hasError = true;
       logger.error(`Failed to create indexes for ${name}`, { error: err.message });
     }
   }
-  logger.info('All indexes ensured');
+  if (hasError) {
+    throw new Error('One or more database indexes failed to initialize.');
+  }
+  logger.info('All indexes ensured successfully');
 }

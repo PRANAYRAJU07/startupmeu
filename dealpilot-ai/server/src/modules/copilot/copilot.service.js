@@ -69,7 +69,7 @@ export async function updateAnalysis(userId, analysisId, updates, ctx = {}) {
   const analysis = await CopilotAnalysis.findOneAndUpdate(
     { _id: analysisId, userId },
     { $set: updates },
-    { new: true }
+    { new: true, runValidators: true }
   );
 
   if (!analysis) throw new NotFoundError('Analysis not found');

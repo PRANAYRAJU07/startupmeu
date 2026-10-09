@@ -209,10 +209,17 @@ export async function refreshTokens(rawRefreshToken, ctx = {}) {
     throw new AuthenticationError('Session expired or revoked');
   }
 
-  // Revoke old session (rotation)
-  session.revokedAt = new Date();
-  session.revokeReason = 'rotation';
-  await session.save();
+  // Attempt atomic revocation (rotation)
+  const result = await RefreshSession.updateOne(
+    { _id: session._id, revokedAt: null },
+    { $set: { revokedAt: new Date(), revokeReason: 'rotation' } }
+  );
+
+  if (result.modifiedCount === 0) {
+    // Another concurrent request just rotated this token.
+    // We deny this request but do NOT trigger the global reuse revocation to prevent breaking legitimate concurrent races.
+    throw new AuthenticationError('Session expired or revoked');
+  }
 
   // Find user
   const user = await User.findById(session.userId);
@@ -303,19 +310,19 @@ export async function logout(userId, rawRefreshToken, ctx = {}) {
 export async function verifyEmail(rawToken, ctx = {}) {
   const tokenHash = hashToken(rawToken);
 
-  const emailToken = await EmailToken.findOne({
-    type: 'email_verification',
-  }).select('+tokenHash').where('tokenHash').equals(tokenHash);
+  const emailToken = await EmailToken.findOneAndUpdate(
+    { 
+      tokenHash, 
+      type: 'email_verification', 
+      usedAt: null, 
+      expiresAt: { $gt: new Date() } 
+    },
+    { $set: { usedAt: new Date() } }
+  );
 
-  if (!emailToken || emailToken.usedAt) {
+  if (!emailToken) {
     throw new AuthenticationError('Invalid or expired verification token');
   }
-  if (emailToken.expiresAt <= new Date()) {
-    throw new AuthenticationError('Verification token has expired');
-  }
-
-  emailToken.usedAt = new Date();
-  await emailToken.save();
 
   await User.findByIdAndUpdate(emailToken.userId, { isEmailVerified: true });
 
@@ -385,23 +392,23 @@ export async function forgotPassword(email, ctx = {}) {
 export async function resetPassword(rawToken, newPassword, ctx = {}) {
   const tokenHash = hashToken(rawToken);
 
-  const emailToken = await EmailToken.findOne({
-    type: 'password_reset',
-  }).select('+tokenHash').where('tokenHash').equals(tokenHash);
+  const emailToken = await EmailToken.findOneAndUpdate(
+    { 
+      tokenHash, 
+      type: 'password_reset',
+      usedAt: null,
+      expiresAt: { $gt: new Date() }
+    },
+    { $set: { usedAt: new Date() } }
+  );
 
-  if (!emailToken || emailToken.usedAt) {
+  if (!emailToken) {
     throw new AuthenticationError('Invalid or expired reset token');
-  }
-  if (emailToken.expiresAt <= new Date()) {
-    throw new AuthenticationError('Reset token has expired');
   }
 
   const newPasswordHash = await hashPassword(newPassword);
 
   await User.findByIdAndUpdate(emailToken.userId, { passwordHash: newPasswordHash });
-
-  emailToken.usedAt = new Date();
-  await emailToken.save();
 
   // Revoke all active sessions
   await RefreshSession.updateMany(

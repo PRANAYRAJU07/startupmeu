@@ -36,22 +36,41 @@ function calculateStageMatch(startup, investor) {
   return { score: 0, match: 'mismatch', explanation: `Investor does not typically invest at the ${startup.stage} stage.` };
 }
 
+function convertToUSD(amount, currency) {
+  if (amount == null) return null;
+  // Naive conversion for demonstration. In a real system, you'd use exchange rates.
+  const rates = { USD: 1, EUR: 1.1, GBP: 1.25, INR: 0.012 };
+  const rate = rates[currency?.toUpperCase()] || 1;
+  return amount * rate;
+}
+
 function calculateTicketSizeMatch(startup, investor) {
-  if (startup.targetRaiseAmount == null) return { score: 0, match: 'unknown', explanation: 'Startup target raise amount is not provided.' };
-  if (investor.minTicketSize == null && investor.maxTicketSize == null) return { score: 0, match: 'unknown', explanation: 'Investor ticket size preferences are not known.' };
-  
-  const min = investor.minTicketSize || 0;
-  const max = investor.maxTicketSize || Infinity;
-  
-  // We check if the startup is raising an amount that the investor can potentially participate in.
-  // Assuming investor ticket size is how much *they* write, the raise amount should be >= minTicketSize.
-  // A startup raising $1M might get a $100k ticket. So targetRaiseAmount >= minTicketSize is a positive match.
-  
-  if (startup.targetRaiseAmount < min) {
-    return { score: 0, match: 'mismatch', explanation: `Startup target raise (${startup.targetRaiseAmount}) is below investor minimum ticket size (${min}).` };
+  const startupMin = convertToUSD(startup.minTicketSize, startup.raiseCurrency);
+  const startupMax = convertToUSD(startup.maxTicketSize, startup.raiseCurrency);
+  const invMin = convertToUSD(investor.minTicketSize, investor.currency || 'USD');
+  const invMax = convertToUSD(investor.maxTicketSize, investor.currency || 'USD');
+
+  if (startupMin == null && startupMax == null) {
+    return { score: 0, match: 'unknown', explanation: 'Startup did not provide acceptable ticket sizes.' };
+  }
+  if (invMin == null && invMax == null) {
+    return { score: 0, match: 'unknown', explanation: 'Investor ticket size preferences are not known.' };
   }
   
-  return { score: 100, match: 'positive', explanation: `Target raise amount aligns with investor ticket size range.` };
+  const sMin = startupMin || 0;
+  const sMax = startupMax || Infinity;
+  const iMin = invMin || 0;
+  const iMax = invMax || Infinity;
+  
+  // They overlap if max(sMin, iMin) <= min(sMax, iMax)
+  const overlapMin = Math.max(sMin, iMin);
+  const overlapMax = Math.min(sMax, iMax);
+  
+  if (overlapMin <= overlapMax) {
+    return { score: 100, match: 'positive', explanation: `Investor ticket sizes overlap with startup's acceptable range.` };
+  }
+  
+  return { score: 0, match: 'mismatch', explanation: `Investor ticket size range does not overlap with startup's acceptable range.` };
 }
 
 function calculateGeoMatch(startup, investor) {

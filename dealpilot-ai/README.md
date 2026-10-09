@@ -169,16 +169,30 @@ This project uses **Kiro (Kiro IDE)** as the AI development tool. All significan
 ## Project Status
 
 - [x] Phase 1 — Repository scaffolding and project initialization
-- [ ] Phase 2 — Database models and server configuration
-- [ ] Phase 3 — Authentication system
-- [ ] Phase 4 — Startup profile module
-- [ ] Phase 5 — Investor directory and matching engine
-- [ ] Phase 6 — AI fundraising copilot
-- [ ] Phase 7 — Fundraising CRM / Pipeline
-- [ ] Phase 8 — Analytics and dashboard data
-- [ ] Phase 9 — React client: auth, onboarding, layout
-- [ ] Phase 10 — React client: core features
-- [ ] Phase 11 — End-to-end tests
-- [ ] Phase 12 — Production readiness and deployment
+- [x] Phase 2 — Database models and server configuration
+- [x] Phase 3 — Authentication system
+- [x] Phase 4 — Startup profile module
+- [x] Phase 5 — Investor directory and matching engine
+- [x] Phase 6 — AI fundraising copilot
+- [x] Phase 7 — Fundraising CRM / Pipeline
+- [x] Phase 8 — Analytics and dashboard data
+- [x] Phase 9 — React client: auth, onboarding, layout
+- [x] Phase 10 — React client: core features
+- [x] Phase 11 — End-to-end tests (Backend Integration Tests)
+- [x] Phase 12 — Production readiness and deployment
 
 See [CHECKLIST.md](CHECKLIST.md) for the full item-by-item checklist.
+
+## Running Tests
+
+To run the full backend test suite with security and integration checks:
+```bash
+cd server
+npm run test
+```
+
+To build the client:
+```bash
+cd client
+npm run build
+```
