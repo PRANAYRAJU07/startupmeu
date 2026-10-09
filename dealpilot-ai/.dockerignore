@@ -1,0 +1,16 @@
+node_modules
+dist
+build
+.git
+.gitignore
+*.log
+.env
+.env.local
+coverage
+.nyc_output
+.vscode
+.idea
+README.md
+docs
+e2e
+scripts
