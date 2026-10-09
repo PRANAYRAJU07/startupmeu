@@ -3,7 +3,7 @@ import SavedInvestor from './savedInvestor.model.js';
 import { NotFoundError, ConflictError } from '../../common/errors/index.js';
 import AuditLog from '../auth/auditLog.model.js';
 import logger from '../../common/utils/logger.js';
-import { paginate } from '../../common/utils/pagination.js'; // Assuming paginate exists or we can write it. Wait, let me check if paginate exists.
+
 
 /**
  * Write an audit log entry.
