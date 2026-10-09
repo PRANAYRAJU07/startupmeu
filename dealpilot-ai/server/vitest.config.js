@@ -7,6 +7,13 @@ export default defineConfig({
     coverage: {
       reporter: ['text', 'lcov'],
     },
+    // Run tests sequentially to prevent mongodb-memory-server from crashing when multiple threads attempt to download/start the binary at the same time
+    fileParallelism: false,
+    poolOptions: {
+      threads: {
+        singleThread: true
+      }
+    },
     hookTimeout: 60000,
     testTimeout: 60000,
     env: {

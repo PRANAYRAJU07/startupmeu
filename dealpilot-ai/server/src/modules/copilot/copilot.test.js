@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll, beforeAll } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { connectTestDb, disconnectTestDb, clearCollections } from '../../../tests/helpers/db.js';
 import app from '../../app.js';
 import User from '../users/user.model.js';
 import Startup from '../startups/startup.model.js';
@@ -13,13 +13,11 @@ import config from '../../config/index.js';
 let mongoServer;
 
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  await mongoose.connect(mongoServer.getUri());
+  await connectTestDb();
 });
 
 afterAll(async () => {
-  await mongoose.disconnect();
-  await mongoServer.stop();
+  await disconnectTestDb();
 });
 
 describe('Copilot Routes', () => {
@@ -27,10 +25,7 @@ describe('Copilot Routes', () => {
   let investor1, startup;
 
   beforeEach(async () => {
-    await User.deleteMany({});
-    await Startup.deleteMany({});
-    await Investor.deleteMany({});
-    await CopilotAnalysis.deleteMany({});
+    await clearCollections();
 
     userA = await User.create({
       firstName: 'Alice',

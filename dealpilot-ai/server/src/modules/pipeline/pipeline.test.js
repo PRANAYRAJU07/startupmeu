@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll, beforeAll } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { connectTestDb, disconnectTestDb, clearCollections } from '../../../tests/helpers/db.js';
 import app from '../../app.js';
 import User from '../users/user.model.js';
 import Investor from '../investors/investor.model.js';
@@ -9,26 +9,16 @@ import Deal from './deal.model.js';
 import { generateAccessToken } from '../../common/utils/token.js';
 import config from '../../config/index.js';
 
-let mongoServer;
+beforeAll(async () => { await connectTestDb(); });
 
-beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  await mongoose.connect(mongoServer.getUri());
-});
-
-afterAll(async () => {
-  await mongoose.disconnect();
-  await mongoServer.stop();
-});
+afterAll(async () => { await disconnectTestDb(); });
 
 describe('Pipeline and Analytics Routes', () => {
   let userA, tokenA;
   let investor1, investor2;
 
   beforeEach(async () => {
-    await User.deleteMany({});
-    await Investor.deleteMany({});
-    await Deal.deleteMany({});
+    await clearCollections();
 
     userA = await User.create({
       firstName: 'Alice',

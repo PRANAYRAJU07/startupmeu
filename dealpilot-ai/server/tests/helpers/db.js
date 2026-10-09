@@ -4,10 +4,27 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 let mongoServer = null;
 
 /**
- * Start an in-memory MongoDB instance and connect Mongoose to it.
+ * Start an in-memory MongoDB instance and connect Mongoose to it,
+ * or connect to a dedicated TEST_MONGODB_URI.
  */
 export async function connectTestDb() {
-  mongoServer = await MongoMemoryServer.create();
+  const customUri = process.env.TEST_MONGODB_URI;
+  if (customUri) {
+    // Basic protection against using dev or prod DBs
+    if (customUri.includes('prod') || customUri.includes('production') || customUri === process.env.MONGODB_URI) {
+      throw new Error('TEST_MONGODB_URI appears to point to a production/dev database. Aborting tests for safety.');
+    }
+    await mongoose.connect(customUri);
+    return;
+  }
+
+  // Fall back to MongoMemoryServer with a stable explicit version
+  mongoServer = await MongoMemoryServer.create({
+    binary: {
+      version: '7.0.14', // Explicit stable version to avoid 8.x download issues
+    }
+  });
+  
   const uri = mongoServer.getUri();
   await mongoose.connect(uri);
 }

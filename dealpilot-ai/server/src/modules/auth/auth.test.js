@@ -59,6 +59,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
+    await clearCollections();
   await clearCollections();
   clearSentEmails();
   await resetRateLimiter();

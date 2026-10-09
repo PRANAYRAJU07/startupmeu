@@ -48,7 +48,7 @@ function calculateConversion(fromCount, toCount) {
 function preventFormulaInjection(val) {
   if (typeof val !== 'string') return val;
   // Prefix dangerous characters with a single quote to prevent spreadsheet execution
-  if (/^[\s\=\+\-\@\t\r]/.test(val)) {
+  if (/^[\s=+\-@\t\r]/.test(val)) {
     return `'${val}`;
   }
   return val;
