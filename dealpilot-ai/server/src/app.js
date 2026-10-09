@@ -1,12 +1,59 @@
+import 'express-async-errors';
 import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import morgan from 'morgan';
+import config from './config/index.js';
+import logger from './common/utils/logger.js';
+import { requestId } from './common/middleware/requestId.js';
+import { apiLimiter } from './common/middleware/rateLimiter.js';
+import { errorHandler } from './common/middleware/errorHandler.js';
+import { NotFoundError } from './common/errors/index.js';
+import healthRouter from './modules/health/health.routes.js';
 
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Request ID — must be first so all subsequent logs include it
+app.use(requestId);
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Security headers
+app.use(helmet({ contentSecurityPolicy: false }));
+
+// CORS
+app.use(cors({
+  origin: config.corsOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+}));
+
+// Cookie parsing
+app.use(cookieParser());
+
+// HTTP request logging via morgan -> winston
+const morganFormat = config.nodeEnv === 'development' ? 'dev' : 'combined';
+app.use(morgan(morganFormat, { stream: { write: (msg) => logger.http(msg.trim()) } }));
+
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Rate limiting on all API routes
+app.use('/api/', apiLimiter);
+
+// Routes
+app.use('/health', healthRouter);
+
+// TODO: mount auth, startups, investors, matching, pipeline, activities, copilot, analytics routes
+app.use('/api/v1', (req, res, next) => next());
+
+// 404 handler
+app.use((req, _res, next) => {
+  next(new NotFoundError(`Route ${req.method} ${req.path} not found`));
 });
+
+// Global error handler — must be last
+app.use(errorHandler);
 
 export default app;

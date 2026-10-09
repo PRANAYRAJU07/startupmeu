@@ -1,17 +1,16 @@
 import mongoose from 'mongoose';
+import logger from '../common/utils/logger.js';
+import config from '../config/index.js';
 
-/**
- * Connect to MongoDB using the MONGODB_URI environment variable.
- * @returns {Promise<void>}
- */
-export async function connectDatabase() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
-    throw new Error('MONGODB_URI environment variable is not set.');
-  }
+mongoose.connection.on('connected', () => logger.info('MongoDB connected'));
+mongoose.connection.on('error', (err) => logger.error('MongoDB error', { error: err.message }));
+mongoose.connection.on('disconnected', () => logger.warn('MongoDB disconnected'));
 
-  await mongoose.connect(uri);
-  console.log('Connected to MongoDB');
+export async function connect() {
+  await mongoose.connect(config.mongodbUri, { serverSelectionTimeoutMS: 5000 });
 }
 
-export default connectDatabase;
+export async function disconnect() {
+  await mongoose.disconnect();
+  logger.info('MongoDB disconnected cleanly');
+}
