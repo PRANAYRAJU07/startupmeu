@@ -36,6 +36,6 @@ const dealSchema = new Schema(
   { strict: true, timestamps: true },
 );
 
-dealSchema.index({ userId: 1, investorId: 1 });
+dealSchema.index({ userId: 1, investorId: 1 }, { unique: true });
 
 export default mongoose.model('Deal', dealSchema);

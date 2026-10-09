@@ -53,4 +53,9 @@ startupSchema.pre('save', function (next) {
   next();
 });
 
+// Support matching queries: filter by industry+stage, sort by profileCompleteness
+startupSchema.index({ industry: 1, stage: 1 });
+startupSchema.index({ profileCompleteness: -1 });
+startupSchema.index({ userId: 1, isDraft: 1 });
+
 export default mongoose.model('Startup', startupSchema);

@@ -8,6 +8,8 @@ export function validate(schema) {
   return (req, res, next) => {
     const fieldErrors = [];
     const targets = ['body', 'query', 'params'];
+    // Stage validated values; only apply them to req after all targets pass
+    const staged = {};
 
     for (const target of targets) {
       if (!schema[target]) continue;
@@ -25,13 +27,18 @@ export function validate(schema) {
           });
         }
       } else {
-        req[target] = value;
+        staged[target] = value;
       }
     }
 
     if (fieldErrors.length > 0) {
       const err = new ValidationError('Validation failed', fieldErrors);
       return next(err);
+    }
+
+    // All targets passed — apply cleaned values now
+    for (const [target, value] of Object.entries(staged)) {
+      req[target] = value;
     }
 
     next();

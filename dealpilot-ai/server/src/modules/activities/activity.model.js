@@ -6,7 +6,7 @@ const { Schema } = mongoose;
 const activitySchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    type: { type: String, enum: ACTIVITY_TYPES },
+    type: { type: String, enum: ACTIVITY_TYPES, required: true },
     description: { type: String, required: true, maxlength: 500 },
     metadata: { type: Schema.Types.Mixed },
     entityType: { type: String },
