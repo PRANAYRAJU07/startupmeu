@@ -255,8 +255,13 @@ export function DashboardPage() {
                       );
                     })}
                   </div>
+                ) : startup?.lastMatchRunAt ? (
+                  <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded-md border border-gray-100">
+                    <p className="font-semibold text-gray-700 mb-1">No eligible investors found</p>
+                    <p>We evaluated all available investors, but none met your profile's hard eligibility criteria (Stage, Geography, and Industry). Try broadening your search criteria or target raise.</p>
+                  </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No matches found yet. Run the matching engine.</p>
+                  <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-md border border-gray-100">No matches found yet. Click 'Compute Matches Now' to run the engine.</p>
                 )}
                 
                 {matchesData && matchesData.length > 0 && (

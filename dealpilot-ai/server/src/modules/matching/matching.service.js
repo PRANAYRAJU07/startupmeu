@@ -165,31 +165,47 @@ export function computeMatchScore(startup, investor) {
 }
 
 export async function computeMatchesForStartup(userId, ctx = {}) {
+  logger.info(`[MATCHING_DIAGNOSTICS] Starting matching run for user ${userId}`);
+  
   const startup = await Startup.findOne({ userId }).lean();
   if (!startup) {
+    logger.warn(`[MATCHING_DIAGNOSTICS] Startup profile not found for user ${userId}`);
     throw new NotFoundError('Startup profile not found');
   }
+  logger.info(`[MATCHING_DIAGNOSTICS] Found startup profile: ${startup._id} (${startup.name})`);
 
   // Validate the profile so we do not generate matches from a stale or invalid profile
   const { error } = createStartupSchema.body.validate(startup, { allowUnknown: true });
   if (error) {
+    logger.warn(`[MATCHING_DIAGNOSTICS] Startup profile is invalid: ${error.message}`);
     throw new ValidationError('Your startup profile is incomplete or invalid. Please update and save it before matching.', error.details);
   }
+  logger.info(`[MATCHING_DIAGNOSTICS] Startup profile validated successfully`);
 
   const investors = await Investor.find({ isActive: true }).lean();
+  logger.info(`[MATCHING_DIAGNOSTICS] Total active investor records in database: ${investors.length}`);
   
   if (investors.length === 0) {
+    logger.warn(`[MATCHING_DIAGNOSTICS] No investor data available`);
     throw new ConflictError('No investor data available to match against. Please seed or import investor records.');
   }
 
   const matchOps = [];
+  let exclusions = { stage: 0, geo: 0, industry: 0, malformed: 0 };
+  let eligibleCount = 0;
 
   for (const investor of investors) {
     const scoreResult = computeMatchScore(startup, investor);
     
     if (scoreResult.hardExclusion) {
+      if (scoreResult.reason.includes('stage')) exclusions.stage++;
+      else if (scoreResult.reason.includes('focus') || scoreResult.reason.includes('geography') || scoreResult.reason.includes('market')) exclusions.geo++;
+      else if (scoreResult.reason.includes('specialize') || scoreResult.reason.includes('industry')) exclusions.industry++;
+      else exclusions.malformed++;
       continue;
     }
+    
+    eligibleCount++;
     
     // Only save positive matches (score > 20 for example) to save DB space, or save all?
     // Let's save all, but only with scores > 0 to avoid massive useless data.
@@ -214,6 +230,13 @@ export async function computeMatchesForStartup(userId, ctx = {}) {
       });
     }
   }
+
+  logger.info(`[MATCHING_DIAGNOSTICS] Excluded by Stage: ${exclusions.stage}`);
+  logger.info(`[MATCHING_DIAGNOSTICS] Excluded by Geography: ${exclusions.geo}`);
+  logger.info(`[MATCHING_DIAGNOSTICS] Excluded by Industry: ${exclusions.industry}`);
+  logger.info(`[MATCHING_DIAGNOSTICS] Excluded by Malformed/Other: ${exclusions.malformed}`);
+  logger.info(`[MATCHING_DIAGNOSTICS] Eligible investors: ${eligibleCount}`);
+  logger.info(`[MATCHING_DIAGNOSTICS] API will return count: ${matchOps.length}`);
 
   // First, delete old matches
   await Match.deleteMany({ userId });
